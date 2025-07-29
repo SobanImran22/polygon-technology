@@ -8,7 +8,12 @@ const mongoose = require("mongoose");
 const http = require('http');
 const { Server } = require("socket.io");
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: ["https://polygon-technology.netlify.app", "http://localhost:5173"],
+  methods: ["GET", "POST"],
+  credentials: true
+}));
+
 app.use(bodyParser.json());
 app.use(express.json());
 
@@ -16,11 +21,9 @@ app.use(express.json());
 
 
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: { origin: "*" }
-});
+const io = new Server(server, {});
 
-app.use(cors());
+
 
 
 
@@ -41,10 +44,12 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model("User", userSchema);
 
-// Withdrawal schema
 const withdrawalSchema = new mongoose.Schema({
   name: String,
-  /* number: String, */
+  number: {
+    type: String,
+    required: false,
+  },
   amount: Number,
   method: String,
   wallet: String,
@@ -54,6 +59,8 @@ const withdrawalSchema = new mongoose.Schema({
   },
 });
 const Withdrawal = mongoose.model("Withdrawal", withdrawalSchema);
+
+
 
 // Deposit schema
 const depositSchema = new mongoose.Schema({
@@ -68,7 +75,7 @@ const Deposit = mongoose.model("Deposit", depositSchema);
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: "tradingbox652@gmail.com",
+    user: "polygontechnology63@gmail.com",
     pass: "yfye mgux vrfl ldyv", // App Password
   },
 });
@@ -89,7 +96,7 @@ app.post("/api/signup", async (req, res) => {
     await newUser.save();
 
     const mailOptions = {
-      from: "tradingbox652@gmail.com",
+      from: "polygontechnology63@gmail.com",
       to: email,
       subject: "Welcome to Our Platform!",
       text: `Hello ${name},\n\nThank you for signing up! We're excited to have you on board.`,
@@ -137,12 +144,14 @@ app.post("/api/deposit", async (req, res) => {
   }
 });
 
-// Withdraw
 app.post("/api/withdraw", async (req, res) => {
   const { name, number, amount, method, wallet } = req.body;
-  if (!name || !number || !amount || !method || !wallet) {
-    return res.status(400).json({ error: "All fields are required" });
+
+  // `number` is optional, rest are required
+  if (!name || !amount || !method || !wallet) {
+    return res.status(400).json({ error: "All required fields must be filled" });
   }
+
   try {
     const newRequest = new Withdrawal({ name, number, amount, method, wallet });
     await newRequest.save();
@@ -152,6 +161,8 @@ app.post("/api/withdraw", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+
+
 
 
 
